@@ -1,0 +1,10 @@
+setup.py
+localAlignement/_version.py
+localAlignement/database_functions.py
+localAlignement/main_functions.py
+localAlignement/parameters_and_strings.py
+localAlignement.egg-info/PKG-INFO
+localAlignement.egg-info/SOURCES.txt
+localAlignement.egg-info/dependency_links.txt
+localAlignement.egg-info/requires.txt
+localAlignement.egg-info/top_level.txt

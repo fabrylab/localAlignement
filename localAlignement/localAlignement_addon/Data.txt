@@ -1,0 +1,4 @@
+[addon]
+name=localAlignement
+file=localAlignement_addon.py
+icon=fa.compress

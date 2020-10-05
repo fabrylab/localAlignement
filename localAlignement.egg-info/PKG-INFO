@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: localAlignement
+Version: 1.0
+Summary: traction force microscopy and FEM analysis of cell sheets
+Home-page: https://pytfm.readthedocs.io/
+Author: Andreas Bauer
+Author-email: andreas.b.bauer@fau.de
+License: UNKNOWN
+Download-URL: https://github.com/fabrylab/pyTFM.git
+Description: UNKNOWN
+Keywords: traction force microscopy,finite elements
+Platform: UNKNOWN
