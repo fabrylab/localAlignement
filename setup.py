@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 import platform
 
-install_requires = ['numpy', 'scipy', 'scikit-image', 'matplotlib >= 2.1.2', 'tqdm', 'clickpoints >= 1.9.0',
+install_requires = ['numpy', 'scipy', 'scikit-image', 'matplotlib >= 2.1.2', 'tqdm', 'clickpoints >= 1.9.6',
                     "natsort"]
 
 version = '1.0'  # adding a version file automatically
