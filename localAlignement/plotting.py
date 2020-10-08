@@ -11,29 +11,29 @@ from peewee import DoesNotExist
 from peewee import IntegrityError
 
 
-
 def display_selections(x, y, frame, db):
-
     if not check_empty_vector(x, y, frame):
         return
-
+    if db.getMask(frame=frame) is None:
+        print("did not find selection in this frame")
+        return
     labels, distances, mid_points, line_vecs, line_ids, interpolation_factor = split_areas(frame, db, x.shape)
 
     plt.ion()
-    fig, ax = show_quiver(x, y, filter=[0,6], plot_cbar=False)
-    for id, l,mid in zip(line_ids, line_vecs, mid_points):
-        dl= l[1] - l[0]
-        ax.arrow(l[0][1],l[0][0],dl[1],dl[0],head_width=3,color="red")
-        ax.text(mid[1],mid[0],str(id))
+    fig, ax = show_quiver(x, y, filter=[0, 6], plot_cbar=False)
+    for id, l, mid in zip(line_ids, line_vecs, mid_points):
+        dl = l[1] - l[0]
+        ax.arrow(l[0][1], l[0][0], dl[1], dl[0], head_width=3, color="red")
+        ax.text(mid[1], mid[0], str(id))
 
     labels = labels.astype(float)
-    labels[labels==0] = np.nan
+    labels[labels == 0] = np.nan
     inv_label = labels.copy()
     inv_label[np.isnan(labels)] = 1
     inv_label[~np.isnan(labels)] = np.nan
-    im2 = ax.imshow(inv_label, alpha=0.6, cmap="afmhot",vmin=0)
+    im2 = ax.imshow(inv_label, alpha=0.6, cmap="afmhot", vmin=0)
     im = ax.imshow(labels, alpha=0.8)
-    plt.colorbar(im,label="area ID")
+    plt.colorbar(im, label="area ID")
     plt.show()
     plt.ioff()
 
@@ -45,7 +45,8 @@ def make_iterable(value):
         return value
 
 
-def except_error(func, error, print_error=True, return_v=False, **kwargs):  # take functino and qkwarks
+def except_error(func, error, print_error=True, return_v=False, **kwargs):
+
     '''
     wraper to handle errors and return false if the exception is encountered
     :param func:
@@ -63,6 +64,7 @@ def except_error(func, error, print_error=True, return_v=False, **kwargs):  # ta
         return return_v
     return values
 
+
 def create_layers_on_demand(db, layer_list):
     '''
     :param db: clickpointsw database
@@ -73,6 +75,7 @@ def create_layers_on_demand(db, layer_list):
     base_layer = db.getLayer(id=1)
     for pl in layer_list:
         db.getLayer(pl, base_layer=base_layer, create=True)
+
 
 def write_image(db, layer, sort_index, filename):
     try:  # deleting all entries that might have been in this sot_index/layer slot
@@ -92,8 +95,8 @@ def add_plot(db, values, frame):
     create_layers_on_demand(db, [plot_layer])
     plt.ioff()
 
-    filter1 = [0, int(int(np.ceil(values[0].shape[0]/ 50)) * 1)]
-    fig, ax = show_quiver(values[0],values[1], filter=filter1, figsize=(fig_shape[1]/200,fig_shape[0]/200))
+    filter1 = [0, int(int(np.ceil(values[0].shape[0] / 50)) * 1)]
+    fig, ax = show_quiver(values[0], values[1], filter=filter1, figsize=(fig_shape[1] / 200, fig_shape[0] / 200))
 
     # saving the the plot
     file_name = os.path.join(os.path.split(db._database_filename)[0], str(frame).zfill(2) + "vector_field.png")
@@ -105,8 +108,6 @@ def add_plot(db, values, frame):
     write_image(db, layer=plot_layer, sort_index=frame, filename=file_name)
 
 
-
-
 def set_vmin_vmax(x, vmin, vmax):
     if not isinstance(vmin, (float, int)):
         vmin = np.nanmin(x)
@@ -115,7 +116,6 @@ def set_vmin_vmax(x, vmin, vmax):
     if isinstance(vmax, (float, int)) and not isinstance(vmin, (float, int)):
         vmin = vmax - 1 if vmin > vmax else None
     return vmin, vmax
-
 
 
 def show_quiver(fx, fy, filter=[0, 1], scale_ratio=0.2, headwidth=None, headlength=None, headaxislength=None,
@@ -144,7 +144,8 @@ def show_quiver(fx, fy, filter=[0, 1], scale_ratio=0.2, headwidth=None, headleng
     ax.set_axis_off()
     # plotting arrows
     # filtering every n-th value and every value smaller then x
-    fx, fy, xs, ys = filter_values(fx, fy, abs_filter=filter[0], f_dist=filter[1],filter_method=filter_method, radius=filter_radius)
+    fx, fy, xs, ys = filter_values(fx, fy, abs_filter=filter[0], f_dist=filter[1], filter_method=filter_method,
+                                   radius=filter_radius)
     if scale_ratio:  # optional custom scaling with the image axis lenght
         fx, fy = scale_for_quiver(fx, fy, dims=dims, scale_ratio=scale_ratio)
         quiver_parameters["scale"] = 1  # disabeling the auto scaling behavior of quiver
@@ -156,7 +157,6 @@ def show_quiver(fx, fy, filter=[0, 1], scale_ratio=0.2, headwidth=None, headleng
     return fig, ax
 
 
-
 def filter_values(ar1, ar2, abs_filter=0, f_dist=3, filter_method="regular", radius=5):
     '''
     function to filter out values from an array for better display
@@ -166,7 +166,6 @@ def filter_values(ar1, ar2, abs_filter=0, f_dist=3, filter_method="regular", rad
     :param f_dist: distance betweeen filtered values
     :return:
     '''
-
 
     if filter_method == "regular":
         pixx = np.arange(np.shape(ar1)[0])
@@ -183,14 +182,15 @@ def filter_values(ar1, ar2, abs_filter=0, f_dist=3, filter_method="regular", rad
         x_ind = xv[select]
         y_ind = yv[select]
     if filter_method == "local_maxima":
-        y_ind,x_ind = find_maxima(ar1, ar2, radius=radius,shape="circle")
+        y_ind, x_ind = find_maxima(ar1, ar2, radius=radius, shape="circle")
         s1 = ar1[y_ind, x_ind]
         s2 = ar2[y_ind, x_ind]
     if filter_method == "local_maxima_square":
-        y_ind,x_ind = find_maxima(ar1, ar2, radius=radius,shape="square")
+        y_ind, x_ind = find_maxima(ar1, ar2, radius=radius, shape="square")
         s1 = ar1[y_ind, x_ind]
         s2 = ar2[y_ind, x_ind]
     return s1, s2, x_ind, y_ind
+
 
 def add_colorbar(vmin, vmax, cmap="rainbow", ax=None, cbar_style="not-clickpoints", cbar_width="2%",
                  cbar_height="50%", cbar_borderpad=0.1, cbar_tick_label_size=15, cbar_str="",
@@ -214,27 +214,27 @@ def add_colorbar(vmin, vmax, cmap="rainbow", ax=None, cbar_style="not-clickpoint
     return cb0
 
 
-
-def find_maxima(ar1,ar2,radius=5,shape="circle"):
+def find_maxima(ar1, ar2, radius=5, shape="circle"):
     # generating circle
 
-    ys,xs = np.indices((radius*2 + 1,radius*2+1))
+    ys, xs = np.indices((radius * 2 + 1, radius * 2 + 1))
     xs = (xs - radius).astype(float)
     ys = (ys - radius).astype(float)
-    if shape=="circle":
+    if shape == "circle":
         out = np.sqrt(xs ** 2 + ys ** 2) <= radius
         xs[~out] = np.nan
         ys[~out] = np.nan
-    abs = np.sqrt(ar1**2+ar2**2)
-    lmax = np.unravel_index(np.nanargmax(abs),shape=abs.shape)
-    maxis  = [lmax]
+    abs = np.sqrt(ar1 ** 2 + ar2 ** 2)
+    lmax = np.unravel_index(np.nanargmax(abs), shape=abs.shape)
+    maxis = [lmax]
     while True:
         x_exclude = (lmax[1] + xs).flatten()
         y_exclude = (lmax[0] + ys).flatten()
-        outside_image = (x_exclude>=abs.shape[1]) | (x_exclude<0) |  (y_exclude>=abs.shape[0]) | (y_exclude<0) | (np.isnan(x_exclude)) | (np.isnan(y_exclude))
+        outside_image = (x_exclude >= abs.shape[1]) | (x_exclude < 0) | (y_exclude >= abs.shape[0]) | (
+                    y_exclude < 0) | (np.isnan(x_exclude)) | (np.isnan(y_exclude))
         x_exclude = x_exclude[~outside_image]
         y_exclude = y_exclude[~outside_image]
-        abs[y_exclude.astype(int),x_exclude.astype(int)] = np.nan
+        abs[y_exclude.astype(int), x_exclude.astype(int)] = np.nan
         try:
             lmax = np.unravel_index(np.nanargmax(abs), shape=abs.shape)
         except ValueError:
@@ -244,7 +244,6 @@ def find_maxima(ar1,ar2,radius=5,shape="circle"):
     maxis_y = [i[0] for i in maxis]
     maxis_x = [i[1] for i in maxis]
     return maxis_y, maxis_x
-
 
 
 def scale_for_quiver(ar1, ar2, dims, scale_ratio=0.2, return_scale=False):

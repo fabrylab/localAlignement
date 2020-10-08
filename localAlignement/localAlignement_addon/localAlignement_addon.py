@@ -59,30 +59,36 @@ class Addon(clickpoints.Addon):
         self.layout_roi = QtWidgets.QHBoxLayout()
         self.layout_exp = QtWidgets.QHBoxLayout()
         self.layout_find_vectors = QtWidgets.QHBoxLayout()
-        #self.layout_vector_files = QtWidgets.QHBoxLayout()
+        # self.layout_vector_files = QtWidgets.QHBoxLayout()
         self.layout_layers = QtWidgets.QHBoxLayout()
 
         # Roi selection
         self.dist_input = QtWidgets.QLineEdit()
         self.dist_input.setText("30")  # TODO: maybe change to micrometer
         self.dist_input.setValidator(QtGui.QIntValidator())  # restrict input to integers
-        self.layout_roi.addWidget(self.dist_input, stretch=1)
+        self.layout_roi.addWidget(self.dist_input, stretch=2)
+
+
 
         # Roi label
         self.dist_input_lable = QtWidgets.QLabel("ROI distance to fibre [pixel]")
-        self.layout_roi.addWidget(self.dist_input_lable, stretch=3)
+        self.layout_roi.addWidget(self.dist_input_lable, stretch=6)
+
+        # Tickbox to decide if all frames should be processed
+        self.all_frames_checkbox = QtWidgets.QCheckBox("all_frames")
+        self.layout_roi.addWidget(self.all_frames_checkbox, stretch=1)
 
         # button to mark region around lines
         self.button_add_roi = QtWidgets.QPushButton("mark ROI")
         self.button_add_roi.clicked.connect(self.add_roi)
         self.button_add_roi.setToolTip(tooltips["button_add_roi"])
-        self.layout_roi.addWidget(self.button_add_roi, stretch=2)
+        self.layout_roi.addWidget(self.button_add_roi, stretch=4)
 
         # button to display selected vector field
         self.display_selections_button = QtWidgets.QPushButton("display_selections")
         self.display_selections_button.clicked.connect(self.display_selections)
         self.display_selections_button.setToolTip(tooltips["display_selections"])
-        self.layout_roi.addWidget(self.display_selections_button, stretch=2)
+        self.layout_roi.addWidget(self.display_selections_button, stretch=4)
 
         self.box_roi = QtWidgets.QGroupBox("select an area of interest")
         self.box_roi.setLayout(self.layout_roi)
@@ -91,9 +97,13 @@ class Addon(clickpoints.Addon):
         self.export_button = QtWidgets.QPushButton("export alignement data")
         self.export_button.clicked.connect(self.export_local_alignement)
         self.export_button.setToolTip(tooltips["export button"])
-        self.layout_exp.addStretch()
-        self.layout_exp.addWidget(self.export_button)
-        self.layout_exp.addStretch()
+
+        self.filename_field = QtWidgets.QLineEdit(os.path.join(os.getcwd(), "out.txt"))
+
+        self.layout_exp.addStretch(stretch=2)
+        self.layout_exp.addWidget(self.export_button, stretch=2)
+        self.layout_exp.addWidget(self.filename_field, stretch=3)
+        self.layout_exp.addStretch(stretch=2)
 
         # finding and loading vectors
         # line dit holding the currently selected folder
@@ -105,7 +115,7 @@ class Addon(clickpoints.Addon):
         self.open_folder_button.clicked.connect(self.file_dialog)
         self.layout_find_vectors.addWidget(self.open_folder_button, stretch=2)
 
-        # fields for regular expressions to identfy vector files
+        # fields for regular expressions to identify vector files
         self.regex_x_field = QtWidgets.QLineEdit("tx")
         self.regex_x_field.textChanged.connect(self.search_vectors)
         self.layout_find_vectors.addWidget(self.regex_x_field, stretch=1)
@@ -117,10 +127,10 @@ class Addon(clickpoints.Addon):
         self.load_vectors_button = QtWidgets.QPushButton("load vector field")
         self.load_vectors_button.clicked.connect(self.load_vector_fields)
         self.load_vectors_button.setToolTip(tooltips["button_add_roi"])
-        self.layout_find_vectors.addWidget(self.load_vectors_button, stretch= 2)
+        self.layout_find_vectors.addWidget(self.load_vectors_button, stretch=2)
 
         # displaying the vector files
-        self.scrollAreaWidgetContents = QtWidgets.QWidget() # adding grid layout to extra widget to allow for scrolling
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()  # adding grid layout to extra widget to allow for scrolling
         self.vector_file_layout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.vector_file_layout.setRowStretch(3, 3)  # this not beautiful but it works
         # self.vl_layout.setColumnStretch(3,3)
@@ -158,14 +168,12 @@ class Addon(clickpoints.Addon):
         self.layout.addWidget(self.box_vectors)
         self.layout.addLayout(self.layout_layers)
 
-
         # initial vectors
         self.search_vectors()
         self.update_name_fields()
         # automatically load the vector field if it is not to big
         if len(self.files_x.keys()) < 20:
             self.load_vector_fields()
-
 
     def add_eddit(self):
         self.edits = {}
@@ -195,12 +203,11 @@ class Addon(clickpoints.Addon):
         y = self.vector_fields[frame][1]
         display_selections(x, y, frame, self.db)
 
-
     def check_text_field(self, edit):
         path = edit.text()
         if not os.path.isabs(path):
             path = os.path.join(self.folder, path)
-        path_exists = os.path.exists(path)
+        path_exists = os.path.isfile(path) and os.path.exists(path)
 
         if path_exists:
             edit_palette = edit.palette()
@@ -217,7 +224,7 @@ class Addon(clickpoints.Addon):
         self.search_vectors()
         self.update_name_fields()
 
-        for frame, (l, e1 ,e2) in self.edits.items():
+        for frame, (l, e1, e2) in self.edits.items():
             # ignores folder if this is already an abslute path
             # load x_component
             exists_x = self.check_text_field(e1)
@@ -233,16 +240,14 @@ class Addon(clickpoints.Addon):
         self.files_x, self.files_y = search_vectors(self.folder, self.regex_x_field.text(), self.regex_y_field.text())
         self.update_name_fields()
 
-    #def add_vector_fields(self):
+    # def add_vector_fields(self):
     #    # ToDO: implement this
     #    for frame, values in self.vector_fields.items():
     #        add_plot(self.db, values, frame)
 
     def export_local_alignement(self):
-        frame = self.cp.getCurrentFrame()
-        x = self.vector_fields[frame][0]
-        y = self.vector_fields[frame][1]
-        export_local_alignement(x, y, frame, self.db)
+        file_name = self.filename_field.text()
+        export_local_alignement(self.vector_fields,  self.db, file_name)
 
     def do_nothing(self):
         pass
@@ -260,11 +265,11 @@ class Addon(clickpoints.Addon):
 
     def add_roi(self):
         self.cp.save()
+        all_frames = self.all_frames_checkbox.isChecked()
         frame = self.cp.getCurrentFrame()
-        add_roi(self.db, int(self.dist_input.text()), mask_name, line_name, frame)
+        add_roi(self.db, int(self.dist_input.text()), mask_name, line_name, frame, all_frames=all_frames)
         add_line_numbers(self.db, frame)
-        self.cp.reloadMask()  # maybe for all frames?
-        self.cp.reloadMarker(frame=frame)  # maybe for all frames??
+        self.cp.reloadMask()  # maybe for all frames? --> there is no such option??
 
     def display(self):
         add_roi(self.db, int(self.dist_input.text()), mask_name, line_name, self.cp.getCurrentFrame())

@@ -61,7 +61,6 @@ def get_line(start, end):
 
 
 def determine_left_right(p, lp1, lp2, p_ref):
-
     ####### not used ##############
     '''
     # following https://math.stackexchange.com/questions/274712/calculate-on-which-side-of-a-straight-line-is-a-given-point-located
@@ -77,14 +76,11 @@ def determine_left_right(p, lp1, lp2, p_ref):
     det_ref = (p_ref[1] - lp1[1]) * (lp2[0] - lp1[0]) - (p_ref[0] - lp1[0]) * (lp2[1] - lp1[1])
 
     det = det > 0
-    det_ref = det_ref >0
+    det_ref = det_ref > 0
     return det == det_ref
 
 
 def dist_to_line(p, lp1, lp2):
-
-
-
     ####### not used ##############
 
     '''
@@ -95,7 +91,7 @@ def dist_to_line(p, lp1, lp2):
     :return:
     '''
 
-    v1 = lp1 - lp2 # line vector
+    v1 = lp1 - lp2  # line vector
     # vectors from line starts to point(s)
     v2 = np.array([p[0] - lp1[0], p[1] - lp1[1]])
     # angle between main vector and start-to-point vector
@@ -106,8 +102,8 @@ def dist_to_line(p, lp1, lp2):
     dist = np.abs(np.sin(angle) * length2)
     return dist
 
-def dist_to_short_line(p, l):
 
+def dist_to_short_line(p, l):
     ####### not used ##############
 
     # p is array of points [y,x]
@@ -149,7 +145,7 @@ def process_data(full_data, interpolation_factor):
 
         # projecting on the line and weighting by distance to the line
         proj_weighted_dist = np.sum(np.abs(vec_x * vec[1] * dists + vec_y * vec[0] * dists)) / (
-                    np.linalg.norm(vec) * np.sum(dists))
+                np.linalg.norm(vec) * np.sum(dists))
 
         # area of the mask blob in pixels**" of the original image
         ## TODO do I need to square interpolation_factor here --> dont think so
@@ -165,15 +161,15 @@ def process_data(full_data, interpolation_factor):
     total_areas = np.sum(total_areas)
     return pro_data, total_forces, total_areas
 
-def find_areas(line_vecs, mask):
 
+def find_areas(line_vecs, mask):
     mid_points = np.array([l[0] + (l[1] - l[0]) / 2 for l in line_vecs]).astype(int)
     distance = distance_transform_edt(mask)
     markers = np.zeros(mask.shape)
     markers[mid_points[:, 0], mid_points[:, 1]] = np.arange(len(mid_points)).astype(int) + 1
     labels = watershed(-distance, markers, mask=mask)
 
-    return labels, distance,  mid_points
+    return labels, distance, mid_points
 
 
 def interpolation_single_point(point, shape_target, shape_origin):
@@ -182,50 +178,52 @@ def interpolation_single_point(point, shape_target, shape_origin):
     point_interp = point * interpol_factors
     return point_interp
 
-def get_index_dictionary(labels): # works flawlessly
+
+def get_index_dictionary(labels):  # works flawlessly
 
     d = defaultdict(list)
     for ys in range(labels.shape[0]):
         for xs in range(labels.shape[1]):
-            d[labels[ys,xs]].append([ys,xs])
+            d[labels[ys, xs]].append([ys, xs])
     # converting to arrays, and loosing the zero index
-    d2 = {i:np.array(v) for i,v in d.items() if i != 0}
+    d2 = {i: np.array(v) for i, v in d.items() if i != 0}
 
     return d2
+
 
 def translate_lables_dict(labels, line_ids, mid_points, labels_dict):
     # translating the inidices in the labeled mask (each label represents one object blob) to the clickpoints line id
     translation_dict = {}
 
     for id, mid in zip(line_ids, mid_points):
-        translation_dict[labels[mid[0],mid[1]]] = id
+        translation_dict[labels[mid[0], mid[1]]] = id
 
     new_labels_dict = {translation_dict[key]: values for key, values in labels_dict.items()}
     return new_labels_dict
 
 
 def split_areas(frame, db, target_shape):
-
     mask = db.getMask(frame=frame).data
-    interpolation_factor = np.mean(np.array(mask.shape)/np.array(target_shape))
+    interpolation_factor = np.mean(np.array(mask.shape) / np.array(target_shape))
     line_vecs = np.array([[[l.y1, l.x1], [l.y2, l.x2]] for l in db.getLines(frame=frame, type=line_name)])
     # retrieving the clickpoints line ids to make sure they are consitend
-    line_ids = np.array([l.id for l in db.getLines(frame=frame, type=line_name)])#
+    line_ids = np.array([l.id for l in db.getLines(frame=frame, type=line_name)])  #
     # interpolation of the mask to fit vector field shape
     line_vecs = np.array(
-        [[interpolation_single_point(l[0], target_shape, mask.shape), interpolation_single_point(l[1], target_shape, mask.shape)]
+        [[interpolation_single_point(l[0], target_shape, mask.shape),
+          interpolation_single_point(l[1], target_shape, mask.shape)]
          for l in line_vecs])
     mask = interpolation(mask, target_shape)
     labels, distances, mid_points = find_areas(line_vecs, mask)
 
+    return labels, distances, mid_points, line_vecs, line_ids, interpolation_factor  # all returned after interpolation to target shape
 
-    return  labels, distances, mid_points, line_vecs, line_ids, interpolation_factor # all returned after interpolation to target shape
 
 def interpolation(mask, dims, min_cell_size=100, dtype=bool):
     #
     # some pre clean up of the mask
-   # mask = remove_small_holes(mask.astype(bool), min_cell_size)
-    #mask = remove_small_objects(mask.astype(bool), 1000)  # removing other small bits
+    # mask = remove_small_holes(mask.astype(bool), min_cell_size)
+    # mask = remove_small_objects(mask.astype(bool), 1000)  # removing other small bits
     # note: remove_small_objects labels automatically if mask is bool
     coords = np.array(np.where(mask)).astype(float)  # coordinates of all points
     interpol_factors = np.array([dims[0] / mask.shape[0], dims[1] / mask.shape[1]])
