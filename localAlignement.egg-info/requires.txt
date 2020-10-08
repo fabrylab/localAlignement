@@ -1,7 +1,0 @@
-numpy
-scipy
-scikit-image
-matplotlib>=2.1.2
-tqdm
-clickpoints>=1.9.6
-natsort
