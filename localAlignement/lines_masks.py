@@ -6,6 +6,7 @@ from scipy.ndimage import distance_transform_edt
 from scipy.ndimage import binary_closing
 from localAlignement.parameters_and_strings import *
 
+
 def get_line(start, end):
     ######bresenhams line algorithm from http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
     # also chek out https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
@@ -138,7 +139,7 @@ def process_data(full_data, interpolation_factor):
     pro_data = {}
     # a few measures for the alignement:
     for obj_id, data in full_data.items():
-        x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = data
+        frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = data
         # projected force by calcualting the scalar product
         proj = np.sum(np.abs(vec_x * vec[1] + vec_y * vec[0])) / np.linalg.norm(vec)
         # normalized by total force in this patch--> this is probably not usefull
@@ -218,7 +219,7 @@ def split_areas(frame, db, target_shape):
     labels, distances, mid_points = find_areas(line_vecs, mask)
 
 
-    return  labels, distances, mid_points, line_vecs, line_ids, interpolation_factor # all returned aftr interpolation to target shape
+    return  labels, distances, mid_points, line_vecs, line_ids, interpolation_factor # all returned after interpolation to target shape
 
 def interpolation(mask, dims, min_cell_size=100, dtype=bool):
     #

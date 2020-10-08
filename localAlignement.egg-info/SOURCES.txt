@@ -1,8 +1,13 @@
+README.md
 setup.py
 localAlignement/_version.py
 localAlignement/database_functions.py
+localAlignement/helper_functions.py
+localAlignement/lines_masks.py
 localAlignement/main_functions.py
 localAlignement/parameters_and_strings.py
+localAlignement/plotting.py
+localAlignement/raw_file_selection_window.py
 localAlignement.egg-info/PKG-INFO
 localAlignement.egg-info/SOURCES.txt
 localAlignement.egg-info/dependency_links.txt

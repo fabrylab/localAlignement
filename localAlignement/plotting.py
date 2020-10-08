@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from contextlib import suppress
-from localAlignement.database_functions import check_epty_vector, split_areas
+from localAlignement.database_functions import check_empty_vector, split_areas
 from localAlignement.parameters_and_strings import *
 from localAlignement.lines_masks import *
 import os
@@ -14,9 +14,8 @@ from peewee import IntegrityError
 
 def display_selections(x, y, frame, db):
 
-    if not check_epty_vector(x, y, frame):
+    if not check_empty_vector(x, y, frame):
         return
-
 
     labels, distances, mid_points, line_vecs, line_ids, interpolation_factor = split_areas(frame, db, x.shape)
 
@@ -29,6 +28,10 @@ def display_selections(x, y, frame, db):
 
     labels = labels.astype(float)
     labels[labels==0] = np.nan
+    inv_label = labels.copy()
+    inv_label[np.isnan(labels)] = 1
+    inv_label[~np.isnan(labels)] = np.nan
+    im2 = ax.imshow(inv_label, alpha=0.6, cmap="afmhot",vmin=0)
     im = ax.imshow(labels, alpha=0.8)
     plt.colorbar(im,label="area ID")
     plt.show()

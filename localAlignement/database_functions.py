@@ -39,7 +39,7 @@ def add_roi(db, dist_threshold, mask_name, line_name, frame):
     mask_out = mask_out.astype("uint8")
     db.setMask(frame=frame,data=mask_out)
 
-def check_epty_vector(x, y, frame):
+def check_empty_vector(x, y, frame):
     if len(x) == 0 or len(y)==0:
         print("no vectors found in frame %s"%str(frame))
         return False
@@ -57,50 +57,54 @@ def add_line_numbers(db, frame):
 
 
 def export_local_alignement(x, y, frame, db):
-    if not check_epty_vector(x, y, frame):
+    if not check_empty_vector(x, y, frame):
         return
     # interpolation factor is size of mask (original image size) devided by size of vector field
-    labels, distances, mid_points, line_vecs, line_ids, interpolation_factor = split_areas(frame, db, x.shape)
-    indices = get_index_dictionary(labels)
-    indices = translate_lables_dict(labels, line_ids, mid_points, indices)
-    if len(indices.keys()) != len(line_ids):
-        print("number of identified mask blobs and number of lines is unequal: ")
-        print("number of lines: ", len(line_ids))
-        print("number of mask blobs: ", len(indices.keys()))
-        print(indices.keys(),line_ids)
-        raise Exception
-
     full_data = {}
-    processed = {}
-    for obj_id, lvs, mps in zip(line_ids, line_vecs, mid_points):
-        inds = indices[obj_id]
-        vec_x = x[inds[:,0], inds[:,1]]
-        vec_y = y[inds[:,0], inds[:,1]]
-        # position in the coordinate system of the original image
-        x_pos = inds[:,1] * interpolation_factor
-        y_pos = inds[:,0] * interpolation_factor
-        dists = distances[inds[:,0], inds[:,1]] * interpolation_factor
-        lvs = lvs * interpolation_factor
-        mps = mps * interpolation_factor
-        vec =  lvs[1] - lvs[0]
-        # lvs is [[y1,x1],[y2,x2]]
-        # mps is [y,x]
-        full_data[obj_id] = [x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec]
-    # id=[projected forces, projected forces weighted by distance to line, projected forces normalized by local area,
-    # weighted projeced forces normalized by area] --> normalization is per pixel of original image
-    # TODO: check if this makes sense
+    for frame in range(db.getImageCount()):
+        if len(db.getMasks(frame=frame)) == 0 or len(db.getLines(frame=frame)) == 0:
+            continue
+        labels, distances, mid_points, line_vecs, line_ids, interpolation_factor = split_areas(frame, db, x.shape)
+        indices = get_index_dictionary(labels)
+        indices = translate_lables_dict(labels, line_ids, mid_points, indices)
+        if len(indices.keys()) != len(line_ids):
+            print("number of identified mask blobs and number of lines is unequal: ")
+            print("number of lines: ", len(line_ids))
+            print("number of mask blobs: ", len(indices.keys()))
+            print(indices.keys(),line_ids)
+            raise Exception
+
+        for obj_id, lvs, mps in tqdm(zip(line_ids, line_vecs, mid_points)):
+            inds = indices[obj_id] # line ids is unique over all frames
+            vec_x = x[inds[:,0], inds[:,1]]
+            vec_y = y[inds[:,0], inds[:,1]]
+            # position in the coordinate system of the original image
+            x_pos = inds[:,1] * interpolation_factor
+            y_pos = inds[:,0] * interpolation_factor
+            dists = distances[inds[:,0], inds[:,1]] * interpolation_factor
+            lvs = lvs * interpolation_factor
+            mps = mps * interpolation_factor
+            vec =  lvs[1] - lvs[0]
+            # lvs is [[y1,x1],[y2,x2]]
+            # mps is [y,x]
+            full_data[obj_id] = [frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec]
+        # id=[projected forces, projected forces weighted by distance to line, projected forces normalized by local area,
+        # weighted projeced forces normalized by area] --> normalization is per pixel of original image
+        # TODO: check if this makes sense
+        # TODO : export all frames
     processed_data, total_forces, total_areas = process_data(full_data, interpolation_factor)
     write_file(os.path.join(os.path.split(db._database_filename)[0],"out.txt"), full_data, processed_data, total_forces, total_areas)
 
 
 def write_file(f_name, full_data, processed_data, total_forces, total_areas):
+    print("writing to %s"%f_name)
     with open(f_name,"w") as f:
         f.write("total force, total area\n")
         f.write("%.2f, %.2f\n"%(total_forces,total_areas))
         for id in full_data.keys():
-            x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = full_data[id]
-            f.write("id, middle_x, middle_y, vecx, vecy, p1x, p1y, p2x, p2y\n")
-            f.write("%d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n"%(id, mps[1],mps[0],vec[1],vec[0],lvs[0][1] ,lvs[0][0],lvs[1][1],lvs[1][0]))
+            frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = full_data[id]
+            f.write("frame id, middle_x, middle_y, vecx, vecy, p1x, p1y, p2x, p2y\n")
+            f.write("%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n"%(frame, id, mps[1],mps[0],vec[1],vec[0],lvs[0][1] ,lvs[0][0],lvs[1][1],lvs[1][0]))
             f.write("projected force, projected force weighted distance, projected force norm, projected force weighted distance norm\n")
             f.write("%.2f, %.2f, %.6f, %.8f\n"%tuple(processed_data[id])) # find better solution to writ this
             f.write("pos_x,pos_y, vec_x, vec_y, dist_to_line\n")
