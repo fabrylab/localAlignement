@@ -212,7 +212,7 @@ class Addon(clickpoints.Addon):
         file = self.filename_field.text()
         get_angles_from_file(file, self.db)
         self.cp.reloadMaskTypes()
-        self.cp.reloadMarker()
+       #self.cp.reloadMarker() #TODO: reimplement that
 
 
     def check_text_field(self, edit):

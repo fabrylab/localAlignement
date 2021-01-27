@@ -135,7 +135,7 @@ def process_data(full_data, interpolation_factor):
     pro_data = {}
     # a few measures for the alignement:
     for obj_id, data in full_data.items():
-        frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = data
+        frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec, angles = data
         # projected force by calcualting the scalar product
         proj = np.sum(np.abs(vec_x * vec[1] + vec_y * vec[0])) / np.linalg.norm(vec)
         # normalized by total force in this patch--> this is probably not usefull

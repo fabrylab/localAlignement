@@ -21,7 +21,7 @@ def identify_block_type(line, ltype):
     return ltype, values
 
 main_vec_fields = ["frame", "id", "middle_x", "middle_y", "vecx", "vecy", "p1x", "p1y", "p2x", "p2y"]
-vec_field_fields = ["pos_x", "pos_y", "vec_x", "vec_y", "dist_to_line"]
+vec_field_fields = ["pos_x", "pos_y", "vec_x", "vec_y", "dist_to_line", "angles"]
 
 def parse_line(line, ltype, frame_id, header, main_vec, field):
     l = [float(x) for x in line.strip().split(", ")]
@@ -81,7 +81,8 @@ def get_angles(main_vec, field, dist_weighted=False):
 
 def get_angles_from_file(file, db):
     #file = "/home/andreas/Software/localAlignement/test_data/KO_analyzed/out.txt"
-    out_put = os.path.split(file)[0] + "angles_"+ os.path.split(file)[1]
+    out_put = os.path.join(os.path.split(file)[0],  "angles_"+ os.path.split(file)[1])
+
     header, main_vec, field = read_file(file)
     angles = get_angles(main_vec, field, dist_weighted=False)
 

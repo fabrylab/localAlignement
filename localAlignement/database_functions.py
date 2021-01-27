@@ -99,9 +99,11 @@ def export_local_alignement(vecs_dict, db,file_name):
             lvs = lvs * interpolation_factor
             mps = mps * interpolation_factor
             vec = lvs[1] - lvs[0]
+            angles = np.abs((vec_x * vec[1]) + (vec_y * vec[0]))/(np.linalg.norm(vec) *  np.linalg.norm(np.array([vec_x, vec_y]), axis=0))
+            angles = np.rad2deg(np.arccos(angles))
             # lvs is [[y1,x1],[y2,x2]]
             # mps is [y,x]
-            full_data[obj_id] = [frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec]
+            full_data[obj_id] = [frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec, angles]
         # id=[projected forces, projected forces weighted by distance to line, projected forces normalized by local area,
         # weighted projeced forces normalized by area] --> normalization is per pixel of original image
         # TODO: check if this makes sense
@@ -118,16 +120,16 @@ def write_file(f_name, full_data, processed_data, total_forces, total_areas):
         f.write("total force, total area\n")
         f.write("%.2f, %.2f\n" % (total_forces, total_areas))
         for id in full_data.keys():
-            frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec = full_data[id]
+            frame, x_pos, y_pos, vec_x, vec_y, dists, lvs, mps, vec, angles = full_data[id]
             f.write("frame, id, middle_x, middle_y, vecx, vecy, p1x, p1y, p2x, p2y\n")
             f.write("%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n" % (
             frame, id, mps[1], mps[0], vec[1], vec[0], lvs[0][1], lvs[0][0], lvs[1][1], lvs[1][0]))
             f.write(
                 "projected force, projected force weighted distance, projected force norm, projected force weighted distance norm\n")
             f.write("%.2f, %.2f, %.6f, %.8f\n" % tuple(processed_data[id]))  # find better solution to writ this
-            f.write("pos_x, pos_y, vec_x, vec_y, dist_to_line\n")
-            for i1, i2, i3, i4, i5 in zip(x_pos, y_pos, vec_x, vec_y, dists):
-                f.write("%.2f, %.2f, %.2f, %.2f, %.2f\n" % (i1, i2, i3, i4, i5))
+            f.write("pos_x, pos_y, vec_x, vec_y, dist_to_line, angles\n")
+            for i1, i2, i3, i4, i5, i6 in zip(x_pos, y_pos, vec_x, vec_y, dists, angles):
+                f.write("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n" % (i1, i2, i3, i4, i5, i6))
 
 ## miscelleanous
 # plt.figure();plt.imshow(np.abs(dist))
