@@ -13,7 +13,7 @@ from localAlignement.plotting import add_plot, display_selections
 from localAlignement.helper_functions import *
 from localAlignement.add_layer_window import FileSelectWindow
 from collections import defaultdict
-
+from localAlignement.scripts.get_angles import get_angles_from_file
 
 # todo implement Qsettings
 # self.settings = QSettings("pyTFM", "pyTFM")
@@ -98,11 +98,16 @@ class Addon(clickpoints.Addon):
         self.export_button.clicked.connect(self.export_local_alignement)
         self.export_button.setToolTip(tooltips["export button"])
 
+        self.display_angles_button = QtWidgets.QPushButton("display angles")
+        self.display_angles_button.clicked.connect(self.display_angles)
+        self.display_angles_button.setToolTip(tooltips["display_angles"])
+
         self.filename_field = QtWidgets.QLineEdit(os.path.join(os.getcwd(), "out.txt"))
 
         self.layout_exp.addStretch(stretch=2)
         self.layout_exp.addWidget(self.export_button, stretch=2)
         self.layout_exp.addWidget(self.filename_field, stretch=3)
+        self.layout_exp.addWidget(self.display_angles_button, stretch=1)
         self.layout_exp.addStretch(stretch=2)
 
         # finding and loading vectors
@@ -202,6 +207,13 @@ class Addon(clickpoints.Addon):
         x = self.vector_fields[frame][0]
         y = self.vector_fields[frame][1]
         display_selections(x, y, frame, self.db)
+
+    def display_angles(self):
+        file = self.filename_field.text()
+        get_angles_from_file(file, self.db)
+        self.cp.reloadMaskTypes()
+        self.cp.reloadMarker()
+
 
     def check_text_field(self, edit):
         path = edit.text()
